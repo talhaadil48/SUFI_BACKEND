@@ -95,7 +95,7 @@ def verify_otp(data: OTPVerifyRequest):
 
     access_token = create_access_token({"sub": str(user["id"])})
     refresh_token = create_refresh_token({"sub": str(user["id"])})
-    user = user_to_dict(user)
+   
 
     return {
         "access_token": access_token,
@@ -141,7 +141,7 @@ def login(data: LoginRequest):
 
     access_token = create_access_token({"sub": str(user["id"])})
     refresh_token = create_refresh_token({"sub": str(user["id"])})
-    user = user_to_dict(user)
+   
     
 
     return {

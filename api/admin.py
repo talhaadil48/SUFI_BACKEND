@@ -6,7 +6,7 @@ from utils.jwt_handler import get_current_user
 
 router = APIRouter(
     prefix="/admin/vocalists",
-    tags=["Admin Vocalists"]
+    tags=["Admin"]
 )
 
 class VocalistStatusUpdate(BaseModel):

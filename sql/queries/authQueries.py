@@ -31,10 +31,15 @@ class AuthQueries:
             return user
 
     def get_user_by_email(self, email):
-        query = "SELECT * FROM users WHERE email = %s;"
+        query = "SELECT id, email, name, role, country, city, permissions, is_registered, password_hash FROM users WHERE email = %s;"
         with self.conn.cursor() as cur:
             cur.execute(query, (email,))
-            return cur.fetchone()
+            row = cur.fetchone()
+            if not row:
+                return None
+            keys = ["id", "email", "name", "role", "country", "city", "permissions", "is_registered", "password_hash"]
+            return {k: row[i] for i, k in enumerate(keys)}
+
 
     def verify_otp_and_register(self, email, otp) -> tuple[Optional[dict], str]:
         query = "SELECT otp, otp_expiry, id, email, name, role, country, city, permissions FROM users WHERE email = %s;"

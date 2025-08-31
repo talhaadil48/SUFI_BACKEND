@@ -4,6 +4,9 @@ import os
 from dotenv import load_dotenv
 from datetime import timezone
 from fastapi import Depends, HTTPException, Header
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+security = HTTPBearer()
+
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env.local'))
 
 SECRET_KEY = os.getenv('JWT_SECRET', 'your_default')
@@ -30,16 +33,16 @@ def verify_token(token: str) -> dict:
     except JWTError:
         return None
 
+from fastapi import Depends, HTTPException, status
 
-
-def get_current_user(authorization: str = Header(...)):
-    token = authorization.replace("Bearer ", "")
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
     payload = verify_token(token)
     if not payload:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
 
     user_id = payload.get("sub")
     if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token payload")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
 
     return user_id
