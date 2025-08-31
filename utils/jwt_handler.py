@@ -3,6 +3,7 @@ from jose import JWTError, jwt
 import os
 from dotenv import load_dotenv
 from datetime import timezone
+from fastapi import Depends, HTTPException, Header
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env.local'))
 
 SECRET_KEY = os.getenv('JWT_SECRET', 'your_default')
@@ -28,3 +29,17 @@ def verify_token(token: str) -> dict:
         return payload
     except JWTError:
         return None
+
+
+
+def get_current_user(authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
+
+    return user_id
