@@ -17,6 +17,3 @@ app.add_middleware(
     allow_headers=["*"],            # Allow all headers
 )
 
-@app.get("/")
-def root():
-    return {"message": "API is running"}
