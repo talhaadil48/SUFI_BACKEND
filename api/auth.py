@@ -6,7 +6,7 @@ from utils.jwt_handler import create_access_token, create_refresh_token,verify_t
 from utils.otp import generate_otp, send_otp_email, get_otp_expiry
 from utils.conv_to_json import user_to_dict
 from utils.google_auth import google_login_or_signup
-from sql.queries import AuthQueries
+from sql.combinedQueries import Queries
 from db.connection import DBConnection
 
 
@@ -52,12 +52,14 @@ class ResetPasswordRequest(BaseModel):
     email: str
     otp: str
     new_password: str
-
-
+    
 @router.post("/signup")
 def signup(data: SignUpRequest):
+    if data.role == "admin":
+        raise HTTPException(status_code=403, detail="Cannot sign up as admin")
+
     conn = DBConnection.get_connection()
-    db = AuthQueries(conn)
+    db = Queries(conn)
 
     if db.get_user_by_email(data.email):
         raise HTTPException(status_code=400, detail="User already exists")
@@ -80,10 +82,11 @@ def signup(data: SignUpRequest):
     send_otp_email(data.email, otp)
     return {"message": "User created. OTP sent to your email."}
 
+
 @router.post("/verify-otp")
 def verify_otp(data: OTPVerifyRequest):
     conn = DBConnection.get_connection()
-    db = AuthQueries(conn)
+    db = Queries(conn)
 
     user, msg = db.verify_otp_and_register(data.email, data.otp)
     
@@ -104,7 +107,7 @@ def verify_otp(data: OTPVerifyRequest):
 @router.post("/resend-otp")
 def resend_otp(data: ResendOTPRequest):
     conn = DBConnection.get_connection()
-    db = AuthQueries(conn)
+    db = Queries(conn)
 
     user = db.get_user_by_email(data.email)
     if not user:
@@ -124,7 +127,7 @@ def resend_otp(data: ResendOTPRequest):
 @router.post("/login")
 def login(data: LoginRequest):
     conn = DBConnection.get_connection()
-    db = AuthQueries(conn)
+    db = Queries(conn)
 
     user = db.get_user_by_email(data.email)
     if not user:
@@ -154,7 +157,7 @@ def login(data: LoginRequest):
 @router.post("/forgot-password")
 def forgot_password(data: ForgotPasswordRequest):
     conn = DBConnection.get_connection()
-    db = AuthQueries(conn)
+    db = Queries(conn)
 
     user = db.get_user_by_email(data.email)
     if not user:
@@ -172,7 +175,7 @@ def forgot_password(data: ForgotPasswordRequest):
 @router.post("/reset-password")
 def reset_password(data: ResetPasswordRequest):
     conn = DBConnection.get_connection()
-    db = AuthQueries(conn)
+    db = Queries(conn)
 
     user = db.get_user_by_email(data.email)
     if not user:
@@ -198,7 +201,7 @@ def refresh_token(data: RefreshTokenRequest):
         raise HTTPException(status_code=401, detail="Invalid token payload")
 
     conn = DBConnection.get_connection()
-    db = AuthQueries(conn)
+    db = Queries(conn)
     user = db.get_user_by_id(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -214,7 +217,7 @@ def refresh_token(data: RefreshTokenRequest):
 @router.post("/change-password")
 def change_password(data: ChangePasswordRequest):
     conn = DBConnection.get_connection()
-    db = AuthQueries(conn)
+    db = Queries(conn)
 
     user = db.get_user_by_email(data.email)
     if not user:

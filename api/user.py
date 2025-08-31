@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel
 from utils.hashing import hash_password, verify_password
 from utils.jwt_handler import verify_token,get_current_user
-from sql.queries import AuthQueries
+from sql.combinedQueries import Queries
 from db.connection import DBConnection
 
 router = APIRouter(
@@ -21,7 +21,7 @@ def change_password(
     user_id: str = Depends(get_current_user)  # optional if you need user_id
 ):
     conn = DBConnection.get_connection()
-    db = AuthQueries(conn)
+    db = Queries(conn)
 
     user = db.get_user_by_id(user_id)
     if not user:

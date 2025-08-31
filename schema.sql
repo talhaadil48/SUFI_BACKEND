@@ -47,10 +47,8 @@ CREATE INDEX idx_vocalists_user_id ON vocalists(user_id);
 CREATE INDEX idx_vocalists_status ON vocalists(status);
 CREATE INDEX idx_vocalists_created_at ON vocalists(created_at);
 
--- =========================
--- KALAM CONTENT
--- =========================
-CREATE TABLE kalam_content (
+
+CREATE TABLE kalams (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     language VARCHAR(100),
@@ -59,88 +57,31 @@ CREATE TABLE kalam_content (
     description TEXT,
     sufi_influence VARCHAR(255),
     musical_preference VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Recommended Indexes
-CREATE INDEX idx_kalam_content_language ON kalam_content(language);
-CREATE INDEX idx_kalam_content_theme ON kalam_content(theme);
-CREATE INDEX idx_kalam_content_created_at ON kalam_content(created_at);
-
--- =========================
--- KALAM SUBMISSIONS
--- =========================
-CREATE TABLE kalam_submissions (
-    id SERIAL PRIMARY KEY,
-    content_id INT REFERENCES kalam_content(id) ON DELETE CASCADE,
-    writer_id INT REFERENCES users(id) ON DELETE CASCADE,
-    status VARCHAR(50) CHECK (
-        status IN (
-            'draft',
-            'submitted',
-            'under_review',
-            'changes_requested',
-            'approved',
-            'rejected'
-        )
-    ) DEFAULT 'draft',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Recommended Indexes
-CREATE INDEX idx_kalam_submissions_content_id ON kalam_submissions(content_id);
-CREATE INDEX idx_kalam_submissions_writer_id ON kalam_submissions(writer_id);
-CREATE INDEX idx_kalam_submissions_status ON kalam_submissions(status);
-CREATE INDEX idx_kalam_submissions_created_at ON kalam_submissions(created_at);
-
--- =========================
--- KALAM REVISIONS
--- =========================
-CREATE TABLE kalam_revisions (
-    id SERIAL PRIMARY KEY,
-    content_id INT REFERENCES kalam_content(id) ON DELETE CASCADE,
-    submission_id INT REFERENCES kalam_submissions(id) ON DELETE CASCADE,
-    editor_id INT REFERENCES users(id) ON DELETE SET NULL,
-    revised_text TEXT,
-    comment TEXT,
-    status VARCHAR(50) CHECK (
-        status IN (
-            'pending_writer_review',
-            'pending_admin_review',
-            'accepted',
-            'rejected'
-        )
-    ) DEFAULT 'pending_writer_review',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Recommended Indexes
-CREATE INDEX idx_kalam_revisions_content_id ON kalam_revisions(content_id);
-CREATE INDEX idx_kalam_revisions_submission_id ON kalam_revisions(submission_id);
-CREATE INDEX idx_kalam_revisions_status ON kalam_revisions(status);
-
--- =========================
--- FINALIZED KALAMS
--- =========================
-CREATE TABLE kalams (
-    id SERIAL PRIMARY KEY,
-    content_id INT UNIQUE REFERENCES kalam_content(id) ON DELETE CASCADE,
-    submission_id INT UNIQUE REFERENCES kalam_submissions(id) ON DELETE SET NULL,
-    writer_id INT REFERENCES users(id) ON DELETE SET NULL,
-    vocalist_id INT REFERENCES vocalists(id) ON DELETE SET NULL,
-    youtube_link TEXT,
+    youtube_link VARCHAR(255),
+    writer_id INT REFERENCES users(id),
+    vocalist_id INT REFERENCES vocalists(id),
     published_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Recommended Indexes
-CREATE INDEX idx_kalams_content_id ON kalams(content_id);
-CREATE INDEX idx_kalams_vocalist_id ON kalams(vocalist_id);
-CREATE INDEX idx_kalams_writer_id ON kalams(writer_id);
-CREATE INDEX idx_kalams_published_at ON kalams(published_at);
+
+
+CREATE TABLE kalam_submissions (
+    id SERIAL PRIMARY KEY,
+    kalam_id INT REFERENCES kalams(id) ON DELETE CASCADE,
+    status VARCHAR(50) CHECK (
+        status IN ('draft','submitted','changes_requested','admin_approved','admin_rejected','final_approved')
+    ) DEFAULT 'draft',
+    user_approval_status VARCHAR(50) CHECK (
+        user_approval_status IN ('pending','approved','rejected')
+    ) DEFAULT 'pending',
+    admin_comments TEXT,
+    writer_comments TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 
 -- =========================
 -- STUDIO VISIT REQUESTS

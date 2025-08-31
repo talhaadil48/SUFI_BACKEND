@@ -2,7 +2,7 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 from utils.jwt_handler import create_access_token, create_refresh_token
 from utils.conv_to_json import user_to_dict
-from sql.queries import AuthQueries
+from sql.combinedQueries import Queries
 from db.connection import DBConnection
 import os
 from dotenv import load_dotenv
@@ -27,7 +27,7 @@ def google_login_or_signup(token: str, role: str):
         return None, "Invalid Google token"
 
     conn = DBConnection.get_connection()
-    db = AuthQueries(conn)
+    db = Queries(conn)
 
     user = db.get_user_by_email(user_info["email"])
     if not user:
