@@ -1,5 +1,6 @@
 from datetime import datetime,timezone
 from typing import Optional
+import json
 
 class AuthQueries:
     def __init__(self, conn):
@@ -86,4 +87,55 @@ class AuthQueries:
         with self.conn.cursor() as cur:
             cur.execute(query, (user_id,))
             return cur.fetchone()
+        
+        
+    def create_subadmin(self, email, name, password_hash, permissions):
+        query = """
+        INSERT INTO users (email, name, password_hash, role, permissions, is_registered)
+        VALUES (%s, %s, %s, 'sub-admin', %s, TRUE)
+        RETURNING id, email, name, role, permissions, is_registered, created_at;
+        """
+        with self.conn.cursor() as cur:
+            cur.execute(query, (email, name, password_hash, json.dumps(permissions)))
+            user = cur.fetchone()
+            self.conn.commit()
+            if user:
+                keys = ["id", "email", "name", "role", "permissions", "is_registered", "created_at"]
+                return dict(zip(keys, user))
+            return None
+
+    def update_subadmin(self, id, name, password_hash, permissions):
+        query = """
+        UPDATE users
+        SET name = %s, password_hash = %s, permissions = %s
+        WHERE id = %s AND role = 'sub-admin'
+        RETURNING id, email, name, role, permissions, is_registered, updated_at;
+        """
+        with self.conn.cursor() as cur:
+            cur.execute(query, (name, password_hash, json.dumps(permissions), id))
+            user = cur.fetchone()
+            self.conn.commit()
+            if user:
+                keys = ["id", "email", "name", "role", "permissions", "is_registered", "updated_at"]
+                return dict(zip(keys, user))
+            return None
+
+    def delete_user_by_id(self, user_id):
+        query = "DELETE FROM users WHERE id = %s;"
+        with self.conn.cursor() as cur:
+            cur.execute(query, (user_id,))
+            self.conn.commit()
+
+    
+    def get_all_subadmins(self):
+        query = """
+        SELECT id, email, name, role, permissions, created_at
+        FROM users
+        WHERE role = 'sub-admin';
+        """
+        with self.conn.cursor() as cur:
+            cur.execute(query)
+            rows = cur.fetchall()
+            keys = ["id", "email", "name", "role", "permissions", "created_at"]
+            return [dict(zip(keys, row)) for row in rows]
 
