@@ -51,6 +51,10 @@ class AuthQueries:
                 return None, "User not found"
 
             stored_otp, expiry, user_id, email, name, role, country, city, permissions = row
+            if not expiry:
+                return None, "OTP expiry not found or not set"  
+
+
             if datetime.now(timezone.utc) > expiry:
                 return None, "OTP expired"
             if stored_otp != otp:
