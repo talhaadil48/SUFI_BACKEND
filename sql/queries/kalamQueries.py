@@ -206,25 +206,53 @@ class KalamQueries:
                 return cur.fetchone()
 
     def update_submission_status(self, submission_id: int, new_status: str, admin_comments: Optional[str] = None):
-        query = """
-        UPDATE kalam_submissions
-        SET status = %s, admin_comments = %s, updated_at = CURRENT_TIMESTAMP
-        WHERE id = %s
-        RETURNING *;
-        """
+        user_approval_status = "pending" if new_status == "changes_requested" else None
+
+        if user_approval_status:
+            query = """
+            UPDATE kalam_submissions
+            SET status = %s, admin_comments = %s, user_approval_status = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+            RETURNING *;
+            """
+            params = (new_status, admin_comments, user_approval_status, submission_id)
+        else:
+            query = """
+            UPDATE kalam_submissions
+            SET status = %s, admin_comments = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+            RETURNING *;
+            """
+            params = (new_status, admin_comments, submission_id)
+
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(query, (new_status, admin_comments, submission_id))
+            cur.execute(query, params)
             self.conn.commit()
             return cur.fetchone()
 
+
     def writer_response(self, submission_id: int, user_approval_status: str, writer_comments: Optional[str] = None):
-        query = """
-        UPDATE kalam_submissions
-        SET user_approval_status = %s, writer_comments = %s, updated_at = CURRENT_TIMESTAMP
-        WHERE id = %s
-        RETURNING *;
-        """
+    # Only update status if user_approval_status is 'rejected'
+        update_status = "submitted" if user_approval_status.lower() == "rejected" else None
+
+        if update_status:
+            query = """
+            UPDATE kalam_submissions
+            SET user_approval_status = %s, writer_comments = %s, status = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+            RETURNING *;
+            """
+            params = (user_approval_status, writer_comments, update_status, submission_id)
+        else:
+            query = """
+            UPDATE kalam_submissions
+            SET user_approval_status = %s, writer_comments = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+            RETURNING *;
+            """
+            params = (user_approval_status, writer_comments, submission_id)
+
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(query, (user_approval_status, writer_comments, submission_id))
+            cur.execute(query, params)
             self.conn.commit()
             return cur.fetchone()

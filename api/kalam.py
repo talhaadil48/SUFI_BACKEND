@@ -233,7 +233,7 @@ def update_submission_status(id: int, sub_id: int, data: UpdateSubmissionStatus,
     if not submission or submission["kalam_id"] != int(id):
         raise HTTPException(status_code=404, detail="Submission not found")
 
-    if data.new_status not in ["admin_approved", "admin_rejected", "changes_requested"]:
+    if data.new_status not in ["admin_approved", "admin_rejected", "changes_requested","final_approved","complete_approved"]:
         raise HTTPException(status_code=400, detail="Invalid status")
 
     updated_submission = db.update_submission_status(sub_id, data.new_status, data.comments)
