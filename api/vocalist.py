@@ -95,7 +95,7 @@ def check_vocalist_registration(user_id: int = Depends(get_current_user)):
 
     if not vocalist:
         return {"is_registered": False}
-    return {"is_registered": True, "status": vocalist["status"]}
+    return {"is_registered": True}
 
 
 @router.get("/kalams")
