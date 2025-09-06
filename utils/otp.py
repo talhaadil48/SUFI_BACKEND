@@ -20,7 +20,6 @@ def send_otp_email(to_email: str, otp: str):
         server.send_message(msg)
 
 
-
 def get_otp_expiry() -> datetime:
 
     return datetime.now(timezone.utc) + timedelta(minutes=5)
