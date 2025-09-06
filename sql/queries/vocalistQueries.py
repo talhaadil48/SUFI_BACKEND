@@ -100,27 +100,24 @@ class VocalistQueries:
             cur.execute(query, (vocalist_id,))
             return cur.fetchall()
     def approve_or_reject_kalam(self, kalam_id: int, status: str, comments: str = None, vocalist_id: int = None):
-        if status == "accepted":
+        if status == "approved":
             query = """
             UPDATE kalam_submissions
-            SET vocalist_approval_status = 'accepted',
+            SET vocalist_approval_status = 'approved',
                 status = 'complete_approved',
                 updated_at = CURRENT_TIMESTAMP
             WHERE kalam_id = %s
             RETURNING *;
             """
             values = (kalam_id,)
+    
 
-            update_kalam_query = """
-            UPDATE kalams
-            SET vocalist_id = %s
-            WHERE id = %s;
-            """
+           
             with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute(query, values)
                 submission_result = cur.fetchone()
-                cur.execute(update_kalam_query, (vocalist_id, kalam_id))
                 self.conn.commit()
+                print("submission_result:", submission_result)
                 return submission_result
 
         elif status == "rejected":

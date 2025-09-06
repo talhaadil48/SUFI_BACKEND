@@ -131,7 +131,7 @@ def approve_or_reject_kalam(
 
     if user["role"] not in ["admin", "vocalist"]:
         raise HTTPException(status_code=403, detail="Not authorized")
-
+    
     result = db.approve_or_reject_kalam(
         kalam_id=kalam_id,
         status=data.status,
