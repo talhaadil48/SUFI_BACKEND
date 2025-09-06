@@ -32,7 +32,7 @@ class StudioVisitRequestResponse(BaseModel):
     preferred_date: Optional[date]
     preferred_time: Optional[str]
     purpose: Optional[str]
-    number_of_visitors: Optional[int]
+    number_of_visitors: Optional[str]
     additional_details: Optional[str]
     special_requests: Optional[str]
     status: str
@@ -220,5 +220,5 @@ def check_request_exists(vocalist_id: int, kalam_id: int, user_id: int = Depends
     remote_conflict = db.check_remote_recording_conflict(vocalist_id, kalam_id, None, None)
 
     return {
-    "is_booked": studio_conflict or remote_conflict
-}
+        "is_booked": studio_conflict or remote_conflict
+    }
