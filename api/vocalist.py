@@ -20,6 +20,12 @@ class SubmitVocalistProfile(BaseModel):
     experience_background: str
     portfolio: str
     availability: str
+    
+
+class KalamApprovalRequest(BaseModel):
+    status: str  # 'approved' or 'rejected'
+    comments: str = None
+
 
 @router.post("/submit")
 def submit_vocalist_profile(data: SubmitVocalistProfile, user_id: int = Depends(get_current_user)):
@@ -54,7 +60,7 @@ def submit_vocalist_profile(data: SubmitVocalistProfile, user_id: int = Depends(
         )
         return {"message": "Vocalist profile submitted successfully"}
 
-@router.get("/{vocalist_id}")
+@router.get("/get/{vocalist_id}")
 def get_vocalist_profile(
     vocalist_id: int,
     current_user_id: int = Depends(get_current_user)  # Only returns user ID
@@ -79,3 +85,61 @@ def get_vocalist_profile(
         raise HTTPException(status_code=404, detail="Vocalist profile not found")
     profile.pop("id", None)  # Remove internal ID before returning
     return profile
+
+
+@router.get("/is-registered")
+def check_vocalist_registration(user_id: int = Depends(get_current_user)):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+    vocalist = db.is_vocalist_registered(user_id)
+
+    if not vocalist:
+        return {"is_registered": False}
+    return {"is_registered": True, "status": vocalist["status"]}
+
+
+@router.get("/kalams")
+def get_kalams_by_vocalist(current_user_id: int = Depends(get_current_user)):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+
+    user = db.get_user_by_id(current_user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user["role"] not in ["admin", "vocalist"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    
+
+    kalams = db.get_kalams_by_vocalist_id(current_user_id)
+    return {"vocalist_id": current_user_id, "kalams": kalams}
+
+
+@router.post("/kalam/{kalam_id}/approval")
+def approve_or_reject_kalam(
+    kalam_id: int,
+    data: KalamApprovalRequest,
+    current_user_id: int = Depends(get_current_user)
+):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+
+    user = db.get_user_by_id(current_user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user["role"] not in ["admin", "vocalist"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    result = db.approve_or_reject_kalam(
+        kalam_id=kalam_id,
+        status=data.status,
+        comments=data.comments,
+        by_admin=(user["role"] == "admin")
+    )
+
+    if not result:
+        raise HTTPException(status_code=404, detail="Kalam submission not found")
+
+    return {"message": f"Kalam {data.status} successfully", "kalam_submission": result}

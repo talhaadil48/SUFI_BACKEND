@@ -21,7 +21,7 @@ class CreateKalam(BaseModel):
     description: str
     sufi_influence: str
     musical_preference: str
-    writer_comments: Optional[str] = None  # Added field
+    writer_comments: Optional[str] = None
 
 class UpdateKalam(BaseModel):
     title: Optional[str] = None
@@ -48,6 +48,10 @@ class UpdateSubmissionStatus(BaseModel):
 class WriterResponse(BaseModel):
     user_approval_status: str
     writer_comments: Optional[str] = None
+
+class VocalistResponse(BaseModel):
+    vocalist_approval_status: str
+    vocalist_comments: Optional[str] = None
 
 @router.post("/")
 def create_kalam(data: CreateKalam, user_id: int = Depends(get_current_user)):
@@ -81,6 +85,7 @@ def create_kalam(data: CreateKalam, user_id: int = Depends(get_current_user)):
         "kalam": kalam,
         "submission": submission
     }
+
 @router.get("/{id}")
 def get_kalam(id: int, user_id: int = Depends(get_current_user)):
     conn = DBConnection.get_connection()
@@ -94,7 +99,6 @@ def get_kalam(id: int, user_id: int = Depends(get_current_user)):
     if not kalam:
         raise HTTPException(status_code=404, detail="Kalam not found")
 
- 
     # Fetch the submission for this kalam
     submission = db.get_kalam_submission_by_kalam_id(id)
 
@@ -102,7 +106,6 @@ def get_kalam(id: int, user_id: int = Depends(get_current_user)):
         "kalam": kalam,
         "submission": submission
     }
-
 
 @router.put("/{id}")
 def update_kalam(id: int, data: UpdateKalam, user_id: int = Depends(get_current_user)):
@@ -148,15 +151,23 @@ def assign_vocalist(id: int, data: AssignVocalist, user_id: int = Depends(get_cu
     if not kalam:
         raise HTTPException(status_code=404, detail="Kalam not found")
 
+    submission = db.get_kalam_submission_by_kalam_id(id)
+    if not submission or submission["status"] != "final_approved":
+        raise HTTPException(status_code=400, detail="Kalam must be in final_approved status to assign vocalist")
+
     vocalist = db.get_vocalist_by_user_id(data.vocalist_id)
     if not vocalist:
         raise HTTPException(status_code=404, detail="Vocalist not found")
 
-    updated_kalam = db.assign_vocalist(id, data.vocalist_id)
-    if not updated_kalam:
+    kalam, submission = db.assign_vocalist(id, data.vocalist_id)
+    if not kalam or not submission:
         raise HTTPException(status_code=500, detail="Failed to assign vocalist")
 
-    return {"message": "Vocalist assigned successfully", "kalam": updated_kalam}
+    return {
+        "message": "Vocalist assigned successfully",
+        "kalam": kalam,
+        "submission": submission
+    }
 
 @router.post("/{id}/post-youtube-link")
 def update_youtube_link(id: int, data: UpdateYouTubeLink, user_id: int = Depends(get_current_user)):
@@ -171,12 +182,19 @@ def update_youtube_link(id: int, data: UpdateYouTubeLink, user_id: int = Depends
     if not kalam:
         raise HTTPException(status_code=404, detail="Kalam not found")
 
-    updated_kalam = db.update_youtube_link(id, data.youtube_link)
-    if not updated_kalam:
+    submission = db.get_kalam_submission_by_kalam_id(id)
+    if not submission or submission["status"] != "complete_approved":
+        raise HTTPException(status_code=400, detail="Kalam must be in complete_approved status to add YouTube link")
+
+    kalam, submission = db.update_youtube_link(id, data.youtube_link)
+    if not kalam or not submission:
         raise HTTPException(status_code=500, detail="Failed to update YouTube link")
 
-    return {"message": "YouTube link updated successfully", "kalam": updated_kalam}
-
+    return {
+        "message": "YouTube link updated successfully",
+        "kalam": kalam,
+        "submission": submission
+    }
 
 @router.get("/{id}/submissions/{sub_id}")
 def get_kalam_submission(id: int, sub_id: int, user_id: int = Depends(get_current_user)):
@@ -194,7 +212,6 @@ def get_kalam_submission(id: int, sub_id: int, user_id: int = Depends(get_curren
     submission = db.get_kalam_submission_by_id(sub_id)
     if not submission or submission["kalam_id"] != int(id):
         raise HTTPException(status_code=404, detail="Submission not found")
-
 
     return submission
 
@@ -239,7 +256,6 @@ def writer_response(id: int, sub_id: int, data: WriterResponse, user_id: int = D
         raise HTTPException(status_code=404, detail="Kalam not found")
 
     if kalam["writer_id"] != int(user_id):
-     
         raise HTTPException(status_code=403, detail="Not authorized to respond to this submission")
 
     submission = db.get_kalam_submission_by_id(sub_id)
@@ -259,3 +275,39 @@ def writer_response(id: int, sub_id: int, data: WriterResponse, user_id: int = D
             raise HTTPException(status_code=500, detail="Failed to finalize submission")
 
     return {"message": "Writer response processed successfully", "submission": updated_submission}
+
+@router.post("/{id}/submissions/{sub_id}/vocalist-response")
+def vocalist_response(id: int, sub_id: int, data: VocalistResponse, user_id: int = Depends(get_current_user)):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+
+    user = db.get_user_by_id(user_id)
+    if not user or user["role"] != "vocalist":
+        raise HTTPException(status_code=403, detail="Only vocalists can respond to submissions")
+
+    kalam = db.get_kalam_by_id(id)
+    if not kalam:
+        raise HTTPException(status_code=404, detail="Kalam not found")
+
+    if kalam["vocalist_id"] != int(user_id):
+        raise HTTPException(status_code=403, detail="Not authorized to respond to this submission")
+
+    submission = db.get_kalam_submission_by_id(sub_id)
+    if not submission or submission["kalam_id"] != int(id):
+        raise HTTPException(status_code=404, detail="Submission not found")
+
+    if submission["status"] != "final_approved":
+        raise HTTPException(status_code=400, detail="Submission must be in final_approved status")
+
+    if data.vocalist_approval_status not in ["approved", "rejected"]:
+        raise HTTPException(status_code=400, detail="Invalid vocalist approval status")
+
+    kalam, submission = db.vocalist_response(id, data.vocalist_approval_status, data.vocalist_comments)
+    if not kalam or not submission:
+        raise HTTPException(status_code=500, detail="Failed to process vocalist response")
+
+    return {
+        "message": "Vocalist response processed successfully",
+        "kalam": kalam,
+        "submission": submission
+    }

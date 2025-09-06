@@ -73,6 +73,12 @@ class KalamQueries:
         WHERE id = %s
         RETURNING *;
         """
+        query_submission = """
+        UPDATE kalam_submissions
+        SET vocalist_approval_status = 'pending', status = 'final_approved', updated_at = CURRENT_TIMESTAMP
+        WHERE kalam_id = %s
+        RETURNING *;
+        """
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
             # Check if this user_id exists in vocalists table
             cur.execute("SELECT 1 FROM vocalists WHERE user_id = %s", (user_id,))
@@ -81,21 +87,79 @@ class KalamQueries:
             
             # Assign user_id to kalams.vocalist_id
             cur.execute(query_update, (user_id, kalam_id))
+            kalam = cur.fetchone()
+            
+            # Update submission status
+            cur.execute(query_submission, (kalam_id,))
+            submission = cur.fetchone()
+            
             self.conn.commit()
-            return cur.fetchone()
-
+            return kalam, submission
 
     def update_youtube_link(self, kalam_id: int, youtube_link: str):
-        query = """
+        query_kalam = """
         UPDATE kalams
-        SET youtube_link = %s, updated_at = CURRENT_TIMESTAMP
+        SET youtube_link = %s, updated_at = CURRENT_TIMESTAMP, published_at = CURRENT_TIMESTAMP
         WHERE id = %s
         RETURNING *;
         """
+        query_submission = """
+        UPDATE kalam_submissions
+        SET status = 'posted', updated_at = CURRENT_TIMESTAMP
+        WHERE kalam_id = %s
+        RETURNING *;
+        """
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(query, (youtube_link, kalam_id))
+            cur.execute(query_kalam, (youtube_link, kalam_id))
+            kalam = cur.fetchone()
+            
+            cur.execute(query_submission, (kalam_id,))
+            submission = cur.fetchone()
+            
             self.conn.commit()
-            return cur.fetchone()
+            return kalam, submission
+
+    def vocalist_response(self, kalam_id: int, vocalist_approval_status: str, vocalist_comments: Optional[str] = None):
+        if vocalist_approval_status not in ["approved", "rejected"]:
+            raise ValueError("Invalid vocalist approval status")
+
+        if vocalist_approval_status == "rejected":
+            query_kalam = """
+            UPDATE kalams
+            SET vocalist_id = NULL, updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+            RETURNING *;
+            """
+            query_submission = """
+            UPDATE kalam_submissions
+            SET status = 'pending', vocalist_approval_status = %s, writer_comments = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE kalam_id = %s
+            RETURNING *;
+            """
+        else:  # approved
+            query_kalam = """
+            UPDATE kalams
+            SET updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+            RETURNING *;
+            """
+            query_submission = """
+            UPDATE kalam_submissions
+            SET status = 'complete_approved', vocalist_approval_status = %s, writer_comments = %s, 
+                updated_at = CURRENT_TIMESTAMP
+            WHERE kalam_id = %s
+            RETURNING *;
+            """
+
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query_kalam, (kalam_id,))
+            kalam = cur.fetchone()
+            
+            cur.execute(query_submission, (vocalist_approval_status, vocalist_comments, kalam_id))
+            submission = cur.fetchone()
+            
+            self.conn.commit()
+            return kalam, submission
 
     def get_kalam_submission_by_kalam_id(self, kalam_id: int):
         query = "SELECT * FROM kalam_submissions WHERE kalam_id = %s;"

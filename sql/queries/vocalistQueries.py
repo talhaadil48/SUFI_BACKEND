@@ -6,7 +6,15 @@ class VocalistQueries:
 
 
     def get_vocalist_by_user_id(self, user_id: int):
-        query = "SELECT * FROM vocalists WHERE user_id = %s;"
+        query = """
+            SELECT 
+                v.*, 
+                u.country, 
+                u.city
+            FROM vocalists v
+            JOIN users u ON v.user_id = u.id
+            WHERE v.user_id = %s;
+        """
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(query, (user_id,))
             return cur.fetchone()
@@ -67,3 +75,51 @@ class VocalistQueries:
             cur.execute(query, values)
             self.conn.commit()
             return cur.fetchone()
+        
+        
+    
+    def is_vocalist_registered(self, user_id: int):
+        query = """
+        SELECT v.status
+        FROM vocalists v
+        JOIN users u ON u.id = v.user_id
+        WHERE v.user_id = %s AND u.role = 'vocalist';
+        """
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, (user_id,))
+            return cur.fetchone()
+
+    def get_kalams_by_vocalist_id(self, vocalist_id: int):
+        query = """
+        SELECT k.*, ks.vocalist_approval_status
+        FROM kalams k
+        LEFT JOIN kalam_submissions ks ON ks.kalam_id = k.id
+        WHERE k.vocalist_id = %s;
+        """
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, (vocalist_id,))
+            return cur.fetchall()
+
+    def approve_or_reject_kalam(self, kalam_id: int, status: str, comments: str = None, by_admin: bool = False):
+        if by_admin:
+            query = """
+            UPDATE kalam_submissions
+            SET status = %s, admin_comments = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE kalam_id = %s
+            RETURNING *;
+            """
+            values = (status, comments, kalam_id)
+        else:
+            query = """
+            UPDATE kalam_submissions
+            SET vocalist_approval_status = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE kalam_id = %s
+            RETURNING *;
+            """
+            values = (status, kalam_id)
+
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, values)
+            result = cur.fetchone()
+            self.conn.commit()
+            return result

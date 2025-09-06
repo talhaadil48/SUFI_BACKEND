@@ -71,10 +71,22 @@ CREATE TABLE kalam_submissions (
     id SERIAL PRIMARY KEY,
     kalam_id INT REFERENCES kalams(id) ON DELETE CASCADE,
     status VARCHAR(50) CHECK (
-        status IN ('draft','submitted','changes_requested','admin_approved','admin_rejected','final_approved')
+        status IN (
+            'draft',
+            'submitted',
+            'changes_requested',
+            'admin_approved',
+            'admin_rejected',
+            'final_approved',
+            'complete_approved',
+            'posted'
+        )
     ) DEFAULT 'draft',
     user_approval_status VARCHAR(50) CHECK (
         user_approval_status IN ('pending','approved','rejected')
+    ) DEFAULT 'pending',
+    vocalist_approval_status VARCHAR(50) CHECK (
+        vocalist_approval_status IN ('pending','approved','rejected')
     ) DEFAULT 'pending',
     admin_comments TEXT,
     writer_comments TEXT,

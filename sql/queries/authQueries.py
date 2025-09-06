@@ -106,7 +106,7 @@ class AuthQueries:
             if user:
                 keys = ["id", "email", "name", "role", "permissions", "is_registered", "created_at"]
                 return dict(zip(keys, user))
-            return None
+            return None 
 
     def update_subadmin(self, id, name, password_hash, permissions):
         query = """
