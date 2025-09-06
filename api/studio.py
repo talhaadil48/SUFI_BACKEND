@@ -219,4 +219,6 @@ def check_request_exists(vocalist_id: int, kalam_id: int, user_id: int = Depends
     # Check for remote recording request
     remote_conflict = db.check_remote_recording_conflict(vocalist_id, kalam_id, None, None)
 
-    return studio_conflict or remote_conflict
+    return {
+    "is_booked": studio_conflict or remote_conflict
+}
