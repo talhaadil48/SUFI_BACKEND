@@ -1,5 +1,5 @@
 from psycopg2.extras import RealDictCursor
-from typing import Optional
+from typing import Optional,List
 
 class KalamQueries:
     def __init__(self, conn):
@@ -25,6 +25,13 @@ class KalamQueries:
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(query, (kalam_id,))
             return cur.fetchone()
+        
+        
+    def get_kalams_by_writer_id(self, writer_id: int) -> List[dict]:
+        query = "SELECT * FROM kalams WHERE writer_id = %s ORDER BY created_at DESC;"
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, (writer_id,))
+            return cur.fetchall()
 
     def update_kalam(self, kalam_id: int, title: Optional[str] = None, language: Optional[str] = None, 
                      theme: Optional[str] = None, kalam_text: Optional[str] = None, 

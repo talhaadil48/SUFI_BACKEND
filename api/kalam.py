@@ -311,3 +311,35 @@ def vocalist_response(id: int, sub_id: int, data: VocalistResponse, user_id: int
         "kalam": kalam,
         "submission": submission
     }
+    
+    
+    
+@router.get("/writer/my-kalams")
+def get_my_kalams(user_id: int = Depends(get_current_user)):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+
+    user = db.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    print(user["role"])
+    if user["role"] != "writer":
+        raise HTTPException(status_code=403, detail="Only writers can view their own kalams")
+
+    kalams = db.get_kalams_by_writer_id(user_id)
+    if not kalams:
+        return {"message": "No kalams found for this writer", "kalams": []}
+
+    # Fetch submissions for each kalam
+    kalam_list = []
+    for kalam in kalams:
+      
+        kalam_list.append({
+            "kalam": kalam,
+           
+        })
+
+    return {
+        "message": "Kalams retrieved successfully",
+        "kalams": kalam_list
+    }
