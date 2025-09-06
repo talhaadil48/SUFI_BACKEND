@@ -193,3 +193,30 @@ def get_remote_recording_requests_by_vocalist(user_id: int = Depends(get_current
 
     requests = db.get_remote_recording_requests_by_vocalist(int(user.get("id")))
     return [RemoteRecordingRequestResponse(**req) for req in requests]
+
+
+
+
+@router.get("/check-request-exists/{vocalist_id}/{kalam_id}", response_model=bool)
+def check_request_exists(vocalist_id: int, kalam_id: int, user_id: int = Depends(get_current_user)):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+
+    user = db.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Allow only vocalists or admins to check requests
+    if user.get("role") not in ["vocalist", "admin"]:
+        raise HTTPException(status_code=403, detail="Only vocalists or admins can check request existence")
+
+    # If vocalist, ensure they can only check their own requests
+    if user.get("role") == "vocalist" and vocalist_id != int(user.get("id")):
+        raise HTTPException(status_code=403, detail="Vocalists can only check their own requests")
+
+    # Check for studio visit request
+    studio_conflict = db.check_studio_visit_conflict(vocalist_id, kalam_id, None, None)
+    # Check for remote recording request
+    remote_conflict = db.check_remote_recording_conflict(vocalist_id, kalam_id, None, None)
+
+    return studio_conflict or remote_conflict
