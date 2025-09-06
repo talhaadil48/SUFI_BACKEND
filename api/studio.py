@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional,Union
 from datetime import datetime, date
 from fastapi import APIRouter, Depends, HTTPException
 from db.connection import DBConnection
@@ -17,7 +17,7 @@ class StudioVisitRequestCreate(BaseModel):
     preferred_date: Optional[date] = None
     preferred_time: Optional[str] = None
     purpose: Optional[str] = None
-    number_of_visitors: Optional[str] = None
+    number_of_visitors: Optional[Union[str, int]] = None
     additional_details: Optional[str] = None
     special_requests: Optional[str] = None
 
@@ -32,7 +32,7 @@ class StudioVisitRequestResponse(BaseModel):
     preferred_date: Optional[date]
     preferred_time: Optional[str]
     purpose: Optional[str]
-    number_of_visitors: Optional[str]
+    number_of_visitors: Optional[Union[str, int]] = None
     additional_details: Optional[str]
     special_requests: Optional[str]
     status: str
@@ -197,28 +197,12 @@ def get_remote_recording_requests_by_vocalist(user_id: int = Depends(get_current
 
 
 
-@router.get("/check-request-exists/{vocalist_id}/{kalam_id}", response_model=bool)
+@router.get("/check-request-exists/{vocalist_id}/{kalam_id}")
 def check_request_exists(vocalist_id: int, kalam_id: int, user_id: int = Depends(get_current_user)):
     conn = DBConnection.get_connection()
     db = Queries(conn)
 
-    user = db.get_user_by_id(user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    studio_conflict = db.studio_request_exists(vocalist_id, kalam_id)
+    remote_conflict = db.remote_request_exists(vocalist_id, kalam_id)
 
-    # Allow only vocalists or admins to check requests
-    if user.get("role") not in ["vocalist", "admin"]:
-        raise HTTPException(status_code=403, detail="Only vocalists or admins can check request existence")
-
-    # If vocalist, ensure they can only check their own requests
-    if user.get("role") == "vocalist" and vocalist_id != int(user.get("id")):
-        raise HTTPException(status_code=403, detail="Vocalists can only check their own requests")
-
-    # Check for studio visit request
-    studio_conflict = db.check_studio_visit_conflict(vocalist_id, kalam_id, None, None)
-    # Check for remote recording request
-    remote_conflict = db.check_remote_recording_conflict(vocalist_id, kalam_id, None, None)
-
-    return {
-        "is_booked": studio_conflict or remote_conflict
-    }
+    return {"is_booked": studio_conflict or remote_conflict}

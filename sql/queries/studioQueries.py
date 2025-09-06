@@ -152,3 +152,24 @@ class StudioQueries:
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(query, (vocalist_user_id,))
             return cur.fetchall()
+    def studio_request_exists(self, vocalist_id: int, kalam_id: int) -> bool:
+        query = """
+        SELECT 1
+        FROM studio_visit_requests
+        WHERE vocalist_id = %s AND kalam_id = %s
+        LIMIT 1;
+        """
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, (vocalist_id, kalam_id))
+            return cur.fetchone() is not None
+
+    def remote_request_exists(self, vocalist_id: int, kalam_id: int) -> bool:
+        query = """
+        SELECT 1
+        FROM remote_recording_requests
+        WHERE vocalist_id = %s AND kalam_id = %s
+        LIMIT 1;
+        """
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, (vocalist_id, kalam_id))
+            return cur.fetchone() is not None
