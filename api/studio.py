@@ -17,7 +17,7 @@ class StudioVisitRequestCreate(BaseModel):
     preferred_date: Optional[date] = None
     preferred_time: Optional[str] = None
     purpose: Optional[str] = None
-    number_of_visitors: Optional[int] = None
+    number_of_visitors: Optional[str] = None
     additional_details: Optional[str] = None
     special_requests: Optional[str] = None
 
