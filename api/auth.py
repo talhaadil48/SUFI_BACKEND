@@ -97,12 +97,7 @@ def verify_otp(data: OTPVerifyRequest):
     refresh_token = create_refresh_token({"sub": str(user["id"])})
    
 
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer",
-        "user": user
-    }
+   
 
 @router.post("/resend-otp")
 def resend_otp(data: ResendOTPRequest):
@@ -144,13 +139,14 @@ def login(data: LoginRequest):
    
     
 
+    user_data = {k: v for k, v in user.items() if k not in ("email", "password_hash")}
+
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
-        "user": user
+        "user": user_data
     }
-
 
 # ---------- Forgot Password ----------
 
