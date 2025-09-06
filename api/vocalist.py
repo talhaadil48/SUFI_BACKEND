@@ -136,7 +136,7 @@ def approve_or_reject_kalam(
         kalam_id=kalam_id,
         status=data.status,
         comments=data.comments,
-        by_admin=(user["role"] == "admin")
+        vocalist_id=current_user_id
     )
 
     if not result:

@@ -99,27 +99,49 @@ class VocalistQueries:
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(query, (vocalist_id,))
             return cur.fetchall()
-
-    def approve_or_reject_kalam(self, kalam_id: int, status: str, comments: str = None, by_admin: bool = False):
-        if by_admin:
+    def approve_or_reject_kalam(self, kalam_id: int, status: str, comments: str = None, vocalist_id: int = None):
+        if status == "accepted":
             query = """
             UPDATE kalam_submissions
-            SET status = %s, admin_comments = %s, updated_at = CURRENT_TIMESTAMP
+            SET vocalist_approval_status = 'accepted',
+                status = 'complete_approved',
+                updated_at = CURRENT_TIMESTAMP
             WHERE kalam_id = %s
             RETURNING *;
             """
-            values = (status, comments, kalam_id)
-        else:
+            values = (kalam_id,)
+
+            update_kalam_query = """
+            UPDATE kalams
+            SET vocalist_id = %s
+            WHERE id = %s;
+            """
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(query, values)
+                submission_result = cur.fetchone()
+                cur.execute(update_kalam_query, (vocalist_id, kalam_id))
+                self.conn.commit()
+                return submission_result
+
+        elif status == "rejected":
             query = """
             UPDATE kalam_submissions
-            SET vocalist_approval_status = %s, updated_at = CURRENT_TIMESTAMP
+            SET vocalist_approval_status = 'rejected',
+                user_approval_status = 'pending',
+                updated_at = CURRENT_TIMESTAMP
             WHERE kalam_id = %s
             RETURNING *;
             """
-            values = (status, kalam_id)
+            values = (kalam_id,)
 
-        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(query, values)
-            result = cur.fetchone()
-            self.conn.commit()
-            return result
+            update_kalam_query = """
+            UPDATE kalams
+            SET vocalist_id = NULL
+            WHERE id = %s;
+            """
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(query, values)
+                submission_result = cur.fetchone()
+                cur.execute(update_kalam_query, (kalam_id,))
+                self.conn.commit()
+                return submission_result
