@@ -11,6 +11,28 @@ router = APIRouter(
 )
 
 
+class KalamResponse(BaseModel):
+    title: str
+    language: str | None
+    theme: str | None
+    sufi_influence: str | None
+    musical_preference: str | None
+    id : int
+
+class KalamByUserResponse(BaseModel):
+    language: str | None
+    theme: str | None
+    sufi_influence: str | None
+    musical_preference: str | None
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    name: str
+    role: str
+    country: str | None
+    city: str | None
+
 class SubAdminCreateRequest(BaseModel):
     email: str
     name: str
@@ -142,3 +164,139 @@ def get_all_subadmins(
 
     subadmins = db.get_all_subadmins()
     return {"subadmins": subadmins}
+
+
+
+@router.get("/kalams")
+def get_all_kalams(
+    current_user_id: int = Depends(get_current_user)
+):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+    current_user = db.get_user_by_id(current_user_id)
+
+    if not current_user or current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Only admin can view kalams")
+
+    query = """
+    SELECT title, language, theme, sufi_influence, musical_preference,id
+    FROM kalams
+    """
+    with conn.cursor() as cur:
+        cur.execute(query)
+        kalams = cur.fetchall()
+    
+    return {
+        "kalams": [
+            KalamResponse(
+                title=kalam[0],
+                language=kalam[1],
+                theme=kalam[2],
+                sufi_influence=kalam[3],
+                musical_preference=kalam[4],
+                id=kalam[5]
+            ).dict() for kalam in kalams
+        ]
+    }
+
+@router.get("/kalams/writer/{user_id}")
+def get_kalams_by_writer(
+    user_id: int,
+    current_user_id: int = Depends(get_current_user)
+):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+    current_user = db.get_user_by_id(current_user_id)
+
+    if not current_user or current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Only admin can view writer kalams")
+
+    user = db.get_user_by_id(user_id)
+    if not user or user["role"] != "writer":
+        raise HTTPException(status_code=404, detail="Writer not found")
+
+    query = """
+    SELECT language, theme, sufi_influence, musical_preference
+    FROM kalams
+    WHERE writer_id = %s
+    """
+    with conn.cursor() as cur:
+        cur.execute(query, (user_id,))
+        kalams = cur.fetchall()
+    
+    return {
+        "kalams": [
+            KalamByUserResponse(
+                language=kalam[0],
+                theme=kalam[1],
+                sufi_influence=kalam[2],
+                musical_preference=kalam[3]
+            ).dict() for kalam in kalams
+        ]
+    }
+
+@router.get("/vocalists")
+def get_all_vocalists(
+    current_user_id: int = Depends(get_current_user)
+):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+    current_user = db.get_user_by_id(current_user_id)
+
+    if not current_user or current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Only admin can view vocalists")
+
+    query = """
+    SELECT id, email, name, role, country, city
+    FROM users
+    WHERE role = 'vocalist'
+    """
+    with conn.cursor() as cur:
+        cur.execute(query)
+        users = cur.fetchall()
+    
+    return {
+        "vocalists": [
+            UserResponse(
+                id=user[0],
+                email=user[1],
+                name=user[2],
+                role=user[3],
+                country=user[4],
+                city=user[5]
+            ).dict() for user in users
+        ]
+    }
+
+@router.get("/writers")
+def get_all_writers(
+    current_user_id: int = Depends(get_current_user)
+):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+    current_user = db.get_user_by_id(current_user_id)
+
+    if not current_user or current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Only admin can view writers")
+
+    query = """
+    SELECT id, email, name, role, country, city
+    FROM users
+    WHERE role = 'writer'
+    """
+    with conn.cursor() as cur:
+        cur.execute(query)
+        users = cur.fetchall()
+    
+    return {
+        "writers": [
+            UserResponse(
+                id=user[0],
+                email=user[1],
+                name=user[2],
+                role=user[3],
+                country=user[4],
+                city=user[5]
+            ).dict() for user in users
+        ]
+    }

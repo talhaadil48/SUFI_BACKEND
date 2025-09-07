@@ -42,11 +42,12 @@ def google_login_or_signup(token: str, role: str):
 
     access_token = create_access_token({"sub": str(user["id"])})
     refresh_token = create_refresh_token({"sub": str(user["id"])})
-    user_dict = user_to_dict(user)
-
+    
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
-        "user": user_dict
+        "user": {
+            k: v for k, v in user.items() if k not in ("password_hash", "email")
+        }
     }, None
