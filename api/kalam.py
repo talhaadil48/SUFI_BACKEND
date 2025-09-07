@@ -220,6 +220,8 @@ def update_submission_status(id: int, sub_id: int, data: UpdateSubmissionStatus,
                             user_id: int = Depends(get_current_user)):
     conn = DBConnection.get_connection()
     db = Queries(conn)
+    if data.new_status == "admin_approved" : 
+        data.new_status = "final_approved"
 
     user = db.get_user_by_id(user_id)
     if not user or user["role"] != "admin":
@@ -276,41 +278,41 @@ def writer_response(id: int, sub_id: int, data: WriterResponse, user_id: int = D
 
     return {"message": "Writer response processed successfully", "submission": updated_submission}
 
-@router.post("/{id}/submissions/{sub_id}/vocalist-response")
-def vocalist_response(id: int, sub_id: int, data: VocalistResponse, user_id: int = Depends(get_current_user)):
-    conn = DBConnection.get_connection()
-    db = Queries(conn)
+# @router.post("/{id}/submissions/{sub_id}/vocalist-response")
+# def vocalist_response(id: int, sub_id: int, data: VocalistResponse, user_id: int = Depends(get_current_user)):
+#     conn = DBConnection.get_connection()
+#     db = Queries(conn)
 
-    user = db.get_user_by_id(user_id)
-    if not user or user["role"] != "vocalist":
-        raise HTTPException(status_code=403, detail="Only vocalists can respond to submissions")
+#     user = db.get_user_by_id(user_id)
+#     if not user or user["role"] != "vocalist":
+#         raise HTTPException(status_code=403, detail="Only vocalists can respond to submissions")
 
-    kalam = db.get_kalam_by_id(id)
-    if not kalam:
-        raise HTTPException(status_code=404, detail="Kalam not found")
+#     kalam = db.get_kalam_by_id(id)
+#     if not kalam:
+#         raise HTTPException(status_code=404, detail="Kalam not found")
 
-    if kalam["vocalist_id"] != int(user_id):
-        raise HTTPException(status_code=403, detail="Not authorized to respond to this submission")
+#     if kalam["vocalist_id"] != int(user_id):
+#         raise HTTPException(status_code=403, detail="Not authorized to respond to this submission")
 
-    submission = db.get_kalam_submission_by_id(sub_id)
-    if not submission or submission["kalam_id"] != int(id):
-        raise HTTPException(status_code=404, detail="Submission not found")
+#     submission = db.get_kalam_submission_by_id(sub_id)
+#     if not submission or submission["kalam_id"] != int(id):
+#         raise HTTPException(status_code=404, detail="Submission not found")
 
-    if submission["status"] != "final_approved":
-        raise HTTPException(status_code=400, detail="Submission must be in final_approved status")
+#     if submission["status"] != "final_approved":
+#         raise HTTPException(status_code=400, detail="Submission must be in final_approved status")
 
-    if data.vocalist_approval_status not in ["approved", "rejected"]:
-        raise HTTPException(status_code=400, detail="Invalid vocalist approval status")
+#     if data.vocalist_approval_status not in ["approved", "rejected"]:
+#         raise HTTPException(status_code=400, detail="Invalid vocalist approval status")
 
-    kalam, submission = db.vocalist_response(id, data.vocalist_approval_status, data.vocalist_comments)
-    if not kalam or not submission:
-        raise HTTPException(status_code=500, detail="Failed to process vocalist response")
+#     kalam, submission = db.vocalist_response(id, data.vocalist_approval_status, data.vocalist_comments)
+#     if not kalam or not submission:
+#         raise HTTPException(status_code=500, detail="Failed to process vocalist response")
 
-    return {
-        "message": "Vocalist response processed successfully",
-        "kalam": kalam,
-        "submission": submission
-    }
+#     return {
+#         "message": "Vocalist response processed successfully",
+#         "kalam": kalam,
+#         "submission": submission
+#     }
     
     
     

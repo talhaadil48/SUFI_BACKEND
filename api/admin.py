@@ -57,6 +57,14 @@ class SubAdminCreateRequest(BaseModel):
     name: str
     password: str
     permissions: dict
+    
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+    role: str
+    country: str
+    city: str
 
 class SubAdminUpdateRequest(BaseModel):
     id: int
@@ -322,7 +330,23 @@ def get_all_writers(
         ]
     }
     
-    
+
+@router.get("/user/{user_id}", response_model=UserResponse)
+def get_user_by_id(user_id: int):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+    user = db.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return UserResponse(
+        id=user["id"],
+        name=user["name"],
+        email=user["email"],
+        role=user["role"],
+        country=user["country"],
+        city=user["city"]
+    )
     
     
 @router.get("/parnterships", response_model=List[PartnershipProposalResponse])
@@ -359,3 +383,6 @@ def get_all_partnership_proposals(
             created_at=str(p[13])
         ) for p in proposals
     ]
+    
+    
+    

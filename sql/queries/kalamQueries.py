@@ -206,7 +206,12 @@ class KalamQueries:
                 return cur.fetchone()
 
     def update_submission_status(self, submission_id: int, new_status: str, admin_comments: Optional[str] = None):
-        user_approval_status = "pending" if new_status == "changes_requested" else None
+        if new_status == "changes_requested":
+            user_approval_status = "pending"
+        elif new_status == "final_approved":
+            user_approval_status = "approved"
+        else:
+            user_approval_status = None
 
         if user_approval_status:
             query = """
