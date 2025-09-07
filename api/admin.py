@@ -20,10 +20,12 @@ class KalamResponse(BaseModel):
     id : int
 
 class KalamByUserResponse(BaseModel):
+    title: str
     language: str | None
     theme: str | None
     sufi_influence: str | None
     musical_preference: str | None
+    id : int
 
 class UserResponse(BaseModel):
     id: int
@@ -216,7 +218,7 @@ def get_kalams_by_writer(
         raise HTTPException(status_code=404, detail="Writer not found")
 
     query = """
-    SELECT language, theme, sufi_influence, musical_preference
+    SELECT title,language, theme, sufi_influence, musical_preference,id
     FROM kalams
     WHERE writer_id = %s
     """
@@ -227,10 +229,12 @@ def get_kalams_by_writer(
     return {
         "kalams": [
             KalamByUserResponse(
-                language=kalam[0],
-                theme=kalam[1],
-                sufi_influence=kalam[2],
-                musical_preference=kalam[3]
+                title = kalam[0],
+                language=kalam[1],
+                theme=kalam[2],
+                sufi_influence=kalam[3],
+                musical_preference=kalam[4],
+                id=kalam[5]
             ).dict() for kalam in kalams
         ]
     }
