@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api import auth_router,user_router,admin_router,vocalist_router,kalam_router,studio_router
+from api import auth_router,user_router,admin_router,vocalist_router,kalam_router,studio_router,notification_router,public_router
 app = FastAPI(title="My App")
 app.add_middleware(
     CORSMiddleware,
@@ -17,3 +17,5 @@ app.include_router(admin_router)
 app.include_router(vocalist_router)
 app.include_router(kalam_router)
 app.include_router(studio_router)
+app.include_router(notification_router)
+app.include_router(public_router)

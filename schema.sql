@@ -154,3 +154,47 @@ CREATE INDEX idx_remote_recording_vocalist_id ON remote_recording_requests(vocal
 CREATE INDEX idx_remote_recording_kalam_id ON remote_recording_requests(kalam_id);
 CREATE INDEX idx_remote_recording_status ON remote_recording_requests(status);
 CREATE INDEX idx_remote_recording_created_at ON remote_recording_requests(created_at);
+
+
+
+
+
+CREATE TABLE notifications (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    target_type VARCHAR(50) NOT NULL CHECK (
+        target_type IN ('all', 'writers', 'vocalists', 'specific')
+    ),
+    target_user_ids INT[] DEFAULT '{}',  -- used only for 'specific'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Notification Reads Table
+CREATE TABLE notification_reads (
+    id SERIAL PRIMARY KEY,
+    notification_id INT REFERENCES notifications(id) ON DELETE CASCADE,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    read_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(notification_id, user_id)
+);
+
+
+
+
+CREATE TABLE partnership_proposals (
+    id SERIAL PRIMARY KEY,
+    full_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    organization_name VARCHAR(255) NOT NULL,
+    role_title VARCHAR(255) NOT NULL,
+    organization_type VARCHAR(100),
+    partnership_type VARCHAR(100),
+    website VARCHAR(255),
+    proposal_text TEXT NOT NULL,
+    proposed_timeline VARCHAR(100),
+    resources TEXT,
+    goals TEXT,
+    sacred_alignment BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

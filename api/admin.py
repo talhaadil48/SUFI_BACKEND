@@ -4,6 +4,8 @@ from db.connection import DBConnection
 from sql.combinedQueries import Queries
 from utils.jwt_handler import get_current_user
 from utils.hashing import hash_password
+from typing import List, Optional
+from datetime import datetime
 
 router = APIRouter(
     prefix="/admin",
@@ -35,6 +37,21 @@ class UserResponse(BaseModel):
     country: str | None
     city: str | None
 
+class PartnershipProposalResponse(BaseModel):
+    id: int
+    full_name: str
+    email: str
+    organization_name: str
+    role_title: str
+    organization_type: Optional[str]
+    partnership_type: Optional[str]
+    website: Optional[str]
+    proposal_text: str
+    proposed_timeline: Optional[str]
+    resources: Optional[str]
+    goals: Optional[str]
+    sacred_alignment: bool
+    created_at: str
 class SubAdminCreateRequest(BaseModel):
     email: str
     name: str
@@ -304,3 +321,41 @@ def get_all_writers(
             ).dict() for user in users
         ]
     }
+    
+    
+    
+    
+@router.get("/parnterships", response_model=List[PartnershipProposalResponse])
+def get_all_partnership_proposals(
+    current_user_id: int = Depends(get_current_user)
+):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+    current_user = db.get_user_by_id(current_user_id)
+
+    if not current_user or current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Only admin can view proposals")
+
+    query = "SELECT * FROM partnership_proposals ORDER BY created_at DESC"
+    with conn.cursor() as cur:
+        cur.execute(query)
+        proposals = cur.fetchall()
+
+    return [
+        PartnershipProposalResponse(
+            id=p[0],
+            full_name=p[1],
+            email=p[2],
+            organization_name=p[3],
+            role_title=p[4],
+            organization_type=p[5],
+            partnership_type=p[6],
+            website=p[7],
+            proposal_text=p[8],
+            proposed_timeline=p[9],
+            resources=p[10],
+            goals=p[11],
+            sacred_alignment=p[12],
+            created_at=str(p[13])
+        ) for p in proposals
+    ]
