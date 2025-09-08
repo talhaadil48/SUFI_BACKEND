@@ -91,7 +91,7 @@ class VocalistQueries:
 
     def get_kalams_by_vocalist_id(self, vocalist_id: int):
         query = """
-        SELECT k.*, ks.vocalist_approval_status
+        SELECT k.*, ks.vocalist_approval_status,ks.status
         FROM kalams k
         LEFT JOIN kalam_submissions ks ON ks.kalam_id = k.id
         WHERE k.vocalist_id = %s;
