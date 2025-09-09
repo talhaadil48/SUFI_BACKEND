@@ -8,6 +8,7 @@ from utils.conv_to_json import user_to_dict
 from utils.google_auth import google_login_or_signup
 from sql.combinedQueries import Queries
 from db.connection import DBConnection
+from typing import Optional
 
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -15,7 +16,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 class GoogleAuthRequest(BaseModel):
     token: str
-    role: str = None  # Optional if user exists, required for signup
+    role: Optional[str] = None  # Optional if user exists, required for signup
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
