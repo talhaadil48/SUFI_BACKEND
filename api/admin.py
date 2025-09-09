@@ -202,7 +202,7 @@ def get_all_kalams(
     db = Queries(conn)
     current_user = db.get_user_by_id(current_user_id)
 
-    if not current_user or current_user["role"] != "admin":
+    if not current_user or current_user["role"] not in ("admin", "sub-admin"):
         raise HTTPException(status_code=403, detail="Only admin can view kalams")
 
     query = """
@@ -235,7 +235,7 @@ def get_kalams_by_writer(
     db = Queries(conn)
     current_user = db.get_user_by_id(current_user_id)
 
-    if not current_user or current_user["role"] != "admin":
+    if not current_user or current_user["role"] not in ("admin", "sub-admin"):
         raise HTTPException(status_code=403, detail="Only admin can view writer kalams")
 
     user = db.get_user_by_id(user_id)
@@ -272,7 +272,7 @@ def get_all_vocalists(
     db = Queries(conn)
     current_user = db.get_user_by_id(current_user_id)
 
-    if not current_user or current_user["role"] != "admin":
+    if not current_user or current_user["role"] not in ("admin", "sub-admin"):
         raise HTTPException(status_code=403, detail="Only admin can view vocalists")
 
     query = """
@@ -305,7 +305,7 @@ def get_all_writers(
     db = Queries(conn)
     current_user = db.get_user_by_id(current_user_id)
 
-    if not current_user or current_user["role"] != "admin":
+    if not current_user or current_user["role"] not in ("admin", "sub-admin"):
         raise HTTPException(status_code=403, detail="Only admin can view writers")
 
     query = """
@@ -357,7 +357,7 @@ def get_all_partnership_proposals(
     db = Queries(conn)
     current_user = db.get_user_by_id(current_user_id)
 
-    if not current_user or current_user["role"] != "admin":
+    if not current_user or current_user["role"] not in ("admin", "sub-admin"):
         raise HTTPException(status_code=403, detail="Only admin can view proposals")
 
     query = "SELECT * FROM partnership_proposals ORDER BY created_at DESC"

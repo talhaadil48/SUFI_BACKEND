@@ -144,7 +144,8 @@ def assign_vocalist(id: int, data: AssignVocalist, user_id: int = Depends(get_cu
     db = Queries(conn)
 
     user = db.get_user_by_id(user_id)
-    if not user or user["role"] != "admin":
+    if not user or user["role"] not in ["admin", "sub-admin"]:
+
         raise HTTPException(status_code=403, detail="Only admins can assign vocalists")
 
     kalam = db.get_kalam_by_id(id)
@@ -175,7 +176,8 @@ def update_youtube_link(id: int, data: UpdateYouTubeLink, user_id: int = Depends
     db = Queries(conn)
 
     user = db.get_user_by_id(user_id)
-    if not user or user["role"] != "admin":
+    if not user or user["role"] not in ["admin", "sub-admin"]:
+
         raise HTTPException(status_code=403, detail="Only admins can update YouTube links")
 
     kalam = db.get_kalam_by_id(id)
@@ -224,7 +226,7 @@ def update_submission_status(id: int, sub_id: int, data: UpdateSubmissionStatus,
         data.new_status = "final_approved"
 
     user = db.get_user_by_id(user_id)
-    if not user or user["role"] != "admin":
+    if not user or user["role"] not in ["admin", "sub-admin"]:
         raise HTTPException(status_code=403, detail="Only admins can update submission status")
 
     kalam = db.get_kalam_by_id(id)
