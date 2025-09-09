@@ -15,25 +15,25 @@ class NotificationQueries:
         return notification
 
     def get_user_notifications(self, user_id):
-        role_query = "SELECT role FROM users WHERE id = %s"
-        with self.conn.cursor() as cur:
-            cur.execute(role_query, (user_id,))
-            role = cur.fetchone()
-            if not role or role[0] == "admin":
-                return []
+        user = self.get_user_by_id(user_id)
+        if not user or user["role"] == "admin":
+            return []
 
-            query = """
-            SELECT n.id, n.title, n.message, n.target_type, n.target_user_ids, n.created_at,
-                   CASE WHEN nr.id IS NULL THEN FALSE ELSE TRUE END AS is_read
-            FROM notifications n
-            LEFT JOIN notification_reads nr
-                   ON nr.notification_id = n.id AND nr.user_id = %s
-            WHERE n.target_type = 'all'
-               OR n.target_type = %s
-               OR (n.target_type = 'specific' AND %s = ANY(n.target_user_ids))
-            ORDER BY n.created_at DESC;
-            """
-            cur.execute(query, (user_id, role[0], user_id))
+        user_role = user["role"]+'s'  # Convert 'writer' to 'writers', 'vocalist' to 'vocalists'
+
+        query = """
+        SELECT n.id, n.title, n.message, n.target_type, n.target_user_ids, n.created_at,
+            CASE WHEN nr.id IS NULL THEN FALSE ELSE TRUE END AS is_read
+        FROM notifications n
+        LEFT JOIN notification_reads nr
+            ON nr.notification_id = n.id AND nr.user_id = %s
+        WHERE n.target_type = 'all'
+        OR n.target_type = %s
+        OR (n.target_type = 'specific' AND %s = ANY(n.target_user_ids))
+        ORDER BY n.created_at DESC;
+        """
+        with self.conn.cursor() as cur:
+            cur.execute(query, (user_id, user_role, user_id))
             notifications = cur.fetchall()
         return notifications
 
