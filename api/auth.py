@@ -96,6 +96,17 @@ def verify_otp(data: OTPVerifyRequest):
     access_token = create_access_token({"sub": str(user["id"])})
     refresh_token = create_refresh_token({"sub": str(user["id"])})
    
+    
+
+    user_data = {k: v for k, v in user.items() if k not in ("email", "password_hash")}
+    return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+            "user": user_data
+        }
+
+
 
    
 
