@@ -93,7 +93,7 @@ def create_partnership_proposal(
 
 
 
-@router.get("/", response_model=List[dict])
+@router.get("/postedkalams", response_model=List[dict])
 def get_posted_kalams(
     skip: int = Query(0, ge=0),  # how many to skip
     limit: int = Query(4, ge=1),  # how many to fetch
@@ -102,3 +102,16 @@ def get_posted_kalams(
     db = Queries(conn)
    
     return db.fetch_posted_kalams(skip, limit)
+
+
+
+
+@router.get("/vocalists", response_model=List[dict])
+def get_vocalists(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1),
+):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+    return db.fetch_vocalists(skip, limit)
+

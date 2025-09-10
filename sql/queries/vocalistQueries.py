@@ -1,5 +1,6 @@
 from psycopg2.extras import RealDictCursor
-
+from fastapi import HTTPException
+from typing import List, Optional
 class VocalistQueries:
     def __init__(self, conn):
         self.conn = conn
@@ -142,3 +143,28 @@ class VocalistQueries:
                 cur.execute(update_kalam_query, (kalam_id,))
                 self.conn.commit()
                 return submission_result
+
+
+
+    def fetch_vocalists(self, skip: int, limit: int) -> List[dict]:
+        query = """
+            SELECT
+                v.*,
+                u.name AS user_name,
+                u.email AS user_email,
+                u.country AS user_country,
+                u.city AS user_city,
+                u.role AS user_role
+            FROM vocalists v
+            JOIN users u ON v.user_id = u.id
+            ORDER BY v.created_at DESC
+            OFFSET %s
+            LIMIT %s;
+        """
+        try:
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(query, (skip, limit))
+                vocalists = cur.fetchall()
+                return vocalists
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
