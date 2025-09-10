@@ -1,5 +1,6 @@
 from psycopg2.extras import RealDictCursor
 from typing import Optional,List
+from fastapi import HTTPException
 
 class KalamQueries:
     def __init__(self, conn):
@@ -261,3 +262,33 @@ class KalamQueries:
             cur.execute(query, params)
             self.conn.commit()
             return cur.fetchone()
+
+
+    def fetch_posted_kalams(self, skip: int, limit: int) -> List[dict]:
+        query = """
+            SELECT
+                k.*,
+                u.name AS writer_name,
+                u.email AS writer_email,
+                u.country AS writer_country,
+                u.city AS writer_city,
+                v.name AS vocalist_name,
+                v.email AS vocalist_email,
+                v.country AS vocalist_country,
+                v.city AS vocalist_city
+            FROM kalams k
+            JOIN users u ON k.writer_id = u.id
+            LEFT JOIN users v ON k.vocalist_id = v.id
+            JOIN kalam_submissions ks ON ks.kalam_id = k.id
+            WHERE ks.status = 'posted'
+            ORDER BY k.created_at DESC
+            OFFSET %s
+            LIMIT %s;
+        """
+        try:
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(query, (skip, limit))
+                kalams = cur.fetchall()
+                return kalams
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
