@@ -281,7 +281,7 @@ class KalamQueries:
             LEFT JOIN users v ON k.vocalist_id = v.id
             JOIN kalam_submissions ks ON ks.kalam_id = k.id
             WHERE ks.status = 'posted'
-            ORDER BY k.created_at DESC
+            ORDER BY k.created_at DESC, k.id DESC
             OFFSET %s
             LIMIT %s;
         """
