@@ -6,3 +6,4 @@ from .kalam import router as kalam_router
 from .studio import router as studio_router
 from .notifications import router as notification_router
 from .public import router as public_router
+from .writer import router as writer_router

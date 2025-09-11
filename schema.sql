@@ -48,6 +48,22 @@ CREATE INDEX idx_vocalists_status ON vocalists(status);
 CREATE INDEX idx_vocalists_created_at ON vocalists(created_at);
 
 
+CREATE TABLE writers (
+    id SERIAL PRIMARY KEY,
+    user_id INT UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    writing_styles TEXT[],             
+    languages TEXT[],                  
+    sample_title VARCHAR(255),         
+    experience_background TEXT,        
+    portfolio TEXT,                    
+    availability TEXT,                 
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE INDEX idx_writer_user_id ON writers(user_id);
+
 CREATE TABLE kalams (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,

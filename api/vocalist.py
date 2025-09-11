@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import List
+from typing import List,Optional
 from db.connection import DBConnection
 from sql.combinedQueries import Queries
 from utils.jwt_handler import get_current_user
@@ -12,15 +12,15 @@ router = APIRouter(
 )
 
 class SubmitVocalistProfile(BaseModel):
-    vocal_range: str
-    languages: List[str]
-    sample_title: str
-    audio_sample_url: str
-    sample_description: str
-    experience_background: str
-    portfolio: str
-    availability: str
-    
+    vocal_range: Optional[str]
+    languages: Optional[List[str]] = None
+    sample_title: Optional[str] = None
+    audio_sample_url: Optional[str] = None
+    sample_description: Optional[str] = None
+    experience_background: Optional[str] = None
+    portfolio: Optional[str] = None
+    availability: Optional[str] = None
+
 
 class KalamApprovalRequest(BaseModel):
     status: str  # 'approved' or 'rejected'
