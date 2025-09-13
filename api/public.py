@@ -115,3 +115,21 @@ def get_vocalists(
     db = Queries(conn)
     return db.fetch_vocalists(skip, limit)
 
+
+
+
+
+@router.get("/posts", response_model=List[dict])
+def get_guest_posts_paginated(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1),
+):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+    
+    try:
+        return db.fetch_paginated_guest_posts(skip, limit)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+

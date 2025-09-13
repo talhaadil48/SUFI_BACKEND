@@ -4,6 +4,9 @@ from utils.hashing import hash_password, verify_password
 from utils.jwt_handler import verify_token,get_current_user
 from sql.combinedQueries import Queries
 from db.connection import DBConnection
+from typing import List, Optional
+
+
 
 router = APIRouter(
     prefix="/user",
@@ -11,6 +14,17 @@ router = APIRouter(
     dependencies=[Depends(get_current_user)]
 )
 
+
+class GuestPostCreate(BaseModel):
+    title: str
+    role: Optional[str] = None
+    city: Optional[str] = None
+    country: Optional[str] = None
+    date: str
+    category: Optional[str] = None
+    excerpt: Optional[str] = None
+    content: Optional[str] = None
+    tags: Optional[List[str]] = None
 class ChangePasswordRequest(BaseModel):
     old_password: str
     new_password: str
@@ -34,3 +48,48 @@ def change_password(
     db.update_password(user["email"], hashed_new)
 
     return {"message": "Password changed successfully"}
+
+
+
+
+
+
+
+
+@router.post("/create-blog")
+def create_guest_post(
+    data: GuestPostCreate,
+    user_id: str = Depends(get_current_user)
+):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+    
+    try:
+        post_id = db.create_guest_post(
+            user_id=user_id,
+            title=data.title,
+            role=data.role,
+            city=data.city,
+            country=data.country,
+            date=data.date,
+            category=data.category,
+            excerpt=data.excerpt,
+            content=data.content,
+            tags=data.tags
+        )
+        return {"message": "Guest post created successfully", "post_id": post_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    
+@router.get("/guest-blogs", response_model=List[dict])
+def get_user_guest_posts(
+    user_id: str = Depends(get_current_user)
+):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+    
+    try:
+        return db.fetch_user_guest_posts(user_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

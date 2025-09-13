@@ -214,3 +214,19 @@ CREATE TABLE partnership_proposals (
     sacred_alignment BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+
+CREATE TABLE guest_posts (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    author TEXT NOT NULL,
+    role TEXT,
+    city TEXT,
+    country TEXT,
+    date DATE NOT NULL,
+    category TEXT,
+    excerpt TEXT,
+    content TEXT,
+    tags TEXT[]
+);

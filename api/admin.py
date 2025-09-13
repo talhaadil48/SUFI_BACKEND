@@ -386,3 +386,47 @@ def get_all_partnership_proposals(
     
     
     
+
+class GuestPostStatusUpdate(BaseModel):
+    status: str    
+
+@router.put("/{post_id}/blog-status")
+def update_post_status(
+    post_id: int,
+    data: GuestPostStatusUpdate,
+    user_id: str = Depends(get_current_user)
+):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+    
+    user = db.get_user_by_id(user_id)
+    if user["role"] not in ["admin", "sub-admin"]:
+        raise HTTPException(status_code=403, detail="Only admin or sub-admin can update status")
+    
+    if data.status not in ["pending", "approved", "rejected"]:
+        raise HTTPException(status_code=400, detail="Invalid status")
+        
+    try:
+        db.update_guest_post_status(post_id, data.status)
+        return {"message": f"Post status updated to {data.status}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    
+    
+    
+@router.get("/admin/all-blogs", response_model=List[dict])
+def get_all_guest_posts(
+    user_id: str = Depends(get_current_user)
+):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+    
+    user = db.get_user_by_id(user_id)
+    if user["role"] not in ["admin", "sub-admin"]:
+        raise HTTPException(status_code=403, detail="Only admin or sub-admin can view all posts")
+        
+    try:
+        return db.fetch_all_guest_posts()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
