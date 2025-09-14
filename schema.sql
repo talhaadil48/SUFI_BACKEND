@@ -219,14 +219,15 @@ CREATE TABLE partnership_proposals (
 
 CREATE TABLE guest_posts (
     id SERIAL PRIMARY KEY,
-    title TEXT NOT NULL,
-    author TEXT NOT NULL,
+    user_id INTEGER NOT NULL,
+    date DATE NOT NULL,
     role TEXT,
     city TEXT,
     country TEXT,
-    date DATE NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
     category TEXT,
     excerpt TEXT,
     content TEXT,
-    tags TEXT[]
+    tags TEXT[],
+    title TEXT NOT NULL
 );
