@@ -20,7 +20,6 @@ class GuestPostCreate(BaseModel):
     role: Optional[str] = None
     city: Optional[str] = None
     country: Optional[str] = None
-    date: str
     category: Optional[str] = None
     excerpt: Optional[str] = None
     content: Optional[str] = None
