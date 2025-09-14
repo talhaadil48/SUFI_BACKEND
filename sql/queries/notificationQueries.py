@@ -61,6 +61,7 @@ class NotificationQueries:
         role: str,
         city: str,
         country: str,
+        date: str,
         category: str,
         excerpt: str,
         content: str,
@@ -71,13 +72,13 @@ class NotificationQueries:
                 user_id, title, role, city, country, date, 
                 category, excerpt, content, tags, status
             )
-            VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s, 'pending')
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending')
             RETURNING id;
         """
         try:
             with self.conn.cursor() as cur:
                 cur.execute(query, (
-                    user_id, title, role, city, country,
+                    user_id, title, role, city, country, date,
                     category, excerpt, content, tags
                 ))
                 post_id = cur.fetchone()[0]
@@ -86,8 +87,8 @@ class NotificationQueries:
         except Exception as e:
             self.conn.rollback()
             raise e
-    
-            
+        
+        
     def update_guest_post_status(self, post_id: int, status: str):
         query = """
             UPDATE guest_posts 
