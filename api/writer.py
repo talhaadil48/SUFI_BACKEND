@@ -68,7 +68,7 @@ def get_writer_profile(
 
     if user["role"] == "writer":
         profile = db.get_writer_by_user_id(user["id"])
-    elif user["role"] == "admin":
+    elif user["role"] not in ['sub-admin','admin']:
         profile = db.get_writer_by_user_id(writer_id)
     else:
         raise HTTPException(status_code=403, detail="Not authorized to view writer profiles")

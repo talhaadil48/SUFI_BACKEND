@@ -119,7 +119,7 @@ def get_all_studio_visit_requests(user_id: int = Depends(get_current_user)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if user.get("role") != "admin":
+    if user.get("role") not in ['admin','sub-admin']:
         raise HTTPException(status_code=403, detail="Only admins can view all studio visit requests")
 
     requests = db.get_all_studio_visit_requests()
@@ -173,7 +173,7 @@ def get_all_remote_recording_requests(user_id: int = Depends(get_current_user)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if user.get("role") != "admin":
+    if user.get("role") not in ['admin','sub-admin']:
         raise HTTPException(status_code=403, detail="Only admins can view all remote recording requests")
 
     requests = db.get_all_remote_recording_requests()

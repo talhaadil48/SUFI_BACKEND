@@ -76,7 +76,7 @@ def get_vocalist_profile(
     
     if user["role"] == "vocalist":
         profile = db.get_vocalist_by_user_id(user["id"])
-    elif user["role"] == "admin":
+    elif user["role"] in ['admin','sub-admin']:
         profile = db.get_vocalist_by_user_id(vocalist_id)
     else:
         raise HTTPException(status_code=403, detail="Not authorized to view vocalist profiles")
@@ -107,7 +107,7 @@ def get_kalams_by_vocalist(current_user_id: int = Depends(get_current_user)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if user["role"] not in ["admin", "vocalist"]:
+    if user["role"] not in ["admin", "vocalist",'sub-admin']:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     
@@ -129,7 +129,7 @@ def approve_or_reject_kalam(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if user["role"] not in ["admin", "vocalist"]:
+    if user["role"] not in ["admin", "vocalist",'sub-admin']:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     result = db.approve_or_reject_kalam(
