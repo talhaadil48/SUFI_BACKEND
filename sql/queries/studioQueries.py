@@ -19,6 +19,7 @@ class StudioQueries:
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(query, (vocalist_id, kalam_id, preferred_date, preferred_time))
             result = cur.fetchone()
+            printr(result)
             return result['conflict']
 
     def check_remote_recording_conflict(self, vocalist_id: int, kalam_id: int, preferred_date: date, preferred_time: str) -> bool:
@@ -31,8 +32,37 @@ class StudioQueries:
         """
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(query, (vocalist_id, kalam_id, preferred_date, preferred_time))
+            
             result = cur.fetchone()
+            print(result)
             return result['conflict']
+        
+    def check_studio_visit_conflict_datetime(self, preferred_date: date, preferred_time: str) -> bool:
+        query = """
+            SELECT EXISTS (
+                SELECT 1 FROM studio_visit_requests 
+                WHERE preferred_date = %s AND preferred_time = %s
+            ) as conflict;
+        """
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, (preferred_date, preferred_time))
+            result = cur.fetchone()
+            print(result)
+            return result['conflict']
+
+    def check_remote_recording_conflict_datetime(self, preferred_date: date, preferred_time: str) -> bool:
+        query = """
+            SELECT EXISTS (
+                SELECT 1 FROM remote_recording_requests 
+                WHERE preferred_date = %s AND preferred_time = %s
+            ) as conflict;
+        """
+        with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, (preferred_date, preferred_time))
+            result = cur.fetchone()
+            print(result)
+            return result['conflict']
+
 
     def create_studio_visit_request(self, data: dict) -> dict:
         if data.get('preferred_date'):
@@ -46,9 +76,7 @@ class StudioQueries:
                 )
         # Check for scheduling conflict
         if data.get('preferred_date') and data.get('preferred_time'):
-            if self.check_studio_visit_conflict(
-                data['vocalist_id'], 
-                data['kalam_id'], 
+            if self.check_studio_visit_conflict_datetime(
                 data['preferred_date'], 
                 data['preferred_time']
             ):
@@ -105,9 +133,8 @@ class StudioQueries:
                     detail="The preferred date cannot be in the past."
                 )
         if data.get('preferred_date') and data.get('preferred_time'):
-            if self.check_remote_recording_conflict(
-                data['vocalist_id'], 
-                data['kalam_id'], 
+            if self.check_remote_recording_conflict_datetime(
+                
                 data['preferred_date'], 
                 data['preferred_time']
             ):
