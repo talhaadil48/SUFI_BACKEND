@@ -292,4 +292,52 @@ class KalamQueries:
                 return kalams
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
-    
+        
+            
+            
+    def upsert_youtube_video(self, video: dict, cur=None):
+        query = """
+            INSERT INTO youtube_videos (id, title, writer, vocalist, thumbnail, views, duration)
+            VALUES (%(id)s, %(title)s, %(writer)s, %(vocalist)s, %(thumbnail)s, %(views)s, %(duration)s)
+            ON CONFLICT (id) DO UPDATE
+            SET title = EXCLUDED.title,
+                writer = EXCLUDED.writer,
+                vocalist = EXCLUDED.vocalist,
+                thumbnail = EXCLUDED.thumbnail,
+                views = EXCLUDED.views,
+                duration = EXCLUDED.duration;
+        """
+        try:
+            if cur:
+                cur.execute(query, video)
+            else:
+                with self.conn.cursor() as cur2:
+                    cur2.execute(query, video)
+                self.conn.commit()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    def get_all_youtube_videos(self, skip: int = 0, limit: int = 50):
+        query = """
+            SELECT id, title, writer, vocalist, thumbnail, views, duration
+            FROM youtube_videos
+            ORDER BY id DESC
+            OFFSET %s
+            LIMIT %s;
+        """
+        try:
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(query, (skip, limit))
+                videos = cur.fetchall()
+                return videos
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    def delete_all_youtube_videos(self):
+        query = "TRUNCATE TABLE youtube_videos RESTART IDENTITY;"
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(query)
+            self.conn.commit()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))

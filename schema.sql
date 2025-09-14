@@ -231,3 +231,15 @@ CREATE TABLE guest_posts (
     tags TEXT[],
     title TEXT NOT NULL
 );
+
+
+
+ CREATE TABLE IF NOT EXISTS videos (
+    id TEXT PRIMARY KEY,
+    title TEXT,
+    writer TEXT,
+    vocalist TEXT,
+    thumbnail TEXT,
+    views TEXT,
+    duration TEXT
+)
