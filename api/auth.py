@@ -83,30 +83,80 @@ def signup(data: SignUpRequest):
     send_otp_email(data.email, otp)
     return {"message": "User created. OTP sent to your email."}
 
-
 @router.post("/verify-otp")
 def verify_otp(data: OTPVerifyRequest):
     conn = DBConnection.get_connection()
     db = Queries(conn)
 
     user, msg = db.verify_otp_and_register(data.email, data.otp)
-    
     if not user:
         raise HTTPException(status_code=400, detail=msg)
 
-    access_token = create_access_token({"sub": str(user["id"])})
-    refresh_token = create_refresh_token({"sub": str(user["id"])})
-   
-    
+    # Decide check based on role
+    role = user.get("role")
+    if role == "vocalist":
+        info_submitted = bool(db.is_vocalist_registered(user["id"]))
+    else:
+        info_submitted = bool(db.is_writer_registered(user["id"]))
+
+    access_token = create_access_token({
+        "sub": str(user["id"]),
+        "info_submitted": info_submitted
+    })
+    refresh_token = create_refresh_token({
+        "sub": str(user["id"]),
+        "info_submitted": info_submitted
+    })
 
     user_data = {k: v for k, v in user.items() if k not in ("email", "password_hash")}
     return {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "token_type": "bearer",
-            "user": user_data
-        }
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "info_submitted": info_submitted,
+        "user": user_data
+    }
 
+
+@router.post("/login")
+def login(data: LoginRequest):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+
+    user = db.get_user_by_email(data.email)
+    if not user:
+        raise HTTPException(status_code=400, detail="User not found")
+    
+    if not user["is_registered"]:
+        raise HTTPException(status_code=400, detail="User not verified. Please verify your email first.")
+    
+    if not verify_password(data.password, user["password_hash"]):
+        raise HTTPException(status_code=400, detail="Invalid credentials")
+
+    # Decide check based on role
+    role = user.get("role")
+    if role == "vocalist":
+        info_submitted = bool(db.is_vocalist_registered(user["id"]))
+    else:
+        info_submitted = bool(db.is_writer_registered(user["id"]))
+
+    access_token = create_access_token({
+        "sub": str(user["id"]),
+        "info_submitted": info_submitted
+    })
+    refresh_token = create_refresh_token({
+        "sub": str(user["id"]),
+        "info_submitted": info_submitted
+    })
+
+    user_data = {k: v for k, v in user.items() if k not in ("email", "password_hash")}
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "info_submitted": info_submitted,
+        "user": user_data
+    }
 
 
    
@@ -130,37 +180,6 @@ def resend_otp(data: ResendOTPRequest):
 
 
 
-
-@router.post("/login")
-def login(data: LoginRequest):
-    conn = DBConnection.get_connection()
-    db = Queries(conn)
-
-    user = db.get_user_by_email(data.email)
-    if not user:
-        raise HTTPException(status_code=400, detail="User not found")
-    
-    if not user["is_registered"]:
-        raise HTTPException(status_code=400, detail="User not verified. Please verify your email first.")
-    
-    if not verify_password(data.password, user["password_hash"]):
-        raise HTTPException(status_code=400, detail="Invalid credentials")
-
-    access_token = create_access_token({"sub": str(user["id"])})
-    refresh_token = create_refresh_token({"sub": str(user["id"])})
-   
-    
-
-    user_data = {k: v for k, v in user.items() if k not in ("email", "password_hash")}
-
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer",
-        "user": user_data
-    }
-
-# ---------- Forgot Password ----------
 
 @router.post("/forgot-password")
 def forgot_password(data: ForgotPasswordRequest):
