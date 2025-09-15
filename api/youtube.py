@@ -6,6 +6,8 @@ from utils.jwt_handler import get_current_user
 from sql.combinedQueries import Queries
 import os, re, requests
 from dotenv import load_dotenv
+from datetime import datetime
+from typing import Optional
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env.local'))
 
@@ -28,7 +30,9 @@ class VideoBase(BaseModel):
     thumbnail: str
     views: str
     duration: str
-
+    uploaded_at: datetime
+    tags: Optional[List[str]] = []
+    
 class VideoResponse(VideoBase):
     pass
 
@@ -126,6 +130,8 @@ def fetch_and_store():
                     video_id = video["id"]["videoId"]
                     duration = fetch_video_duration(video_id)
                     views = fetch_video_stats(video_id)
+                    uploaded_at = video["snippet"]["publishedAt"]
+                    tags = video["snippet"].get("tags", [])  # YouTube tags (list)
 
                     processed = {
                         "id": video_id,
@@ -135,6 +141,8 @@ def fetch_and_store():
                         "thumbnail": video["snippet"]["thumbnails"]["medium"]["url"],
                         "views": views,
                         "duration": duration,
+                        "uploaded_at": uploaded_at,
+                        "tags": tags if tags else [],  # ensure array not NULL
                     }
 
                     db.upsert_youtube_video(processed, cur=cur)

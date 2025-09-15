@@ -297,15 +297,17 @@ class KalamQueries:
             
     def upsert_youtube_video(self, video: dict, cur=None):
         query = """
-            INSERT INTO youtube_videos (id, title, writer, vocalist, thumbnail, views, duration)
-            VALUES (%(id)s, %(title)s, %(writer)s, %(vocalist)s, %(thumbnail)s, %(views)s, %(duration)s)
+            INSERT INTO youtube_videos (id, title, writer, vocalist, thumbnail, views, duration, uploaded_at, tags)
+            VALUES (%(id)s, %(title)s, %(writer)s, %(vocalist)s, %(thumbnail)s, %(views)s, %(duration)s, %(uploaded_at)s, %(tags)s)
             ON CONFLICT (id) DO UPDATE
             SET title = EXCLUDED.title,
                 writer = EXCLUDED.writer,
                 vocalist = EXCLUDED.vocalist,
                 thumbnail = EXCLUDED.thumbnail,
                 views = EXCLUDED.views,
-                duration = EXCLUDED.duration;
+                duration = EXCLUDED.duration,
+                uploaded_at = EXCLUDED.uploaded_at,
+                tags = EXCLUDED.tags;
         """
         try:
             if cur:
@@ -316,9 +318,12 @@ class KalamQueries:
                 self.conn.commit()
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
+
+
+
     def get_all_youtube_videos(self):
         query = """
-            SELECT id, title, writer, vocalist, thumbnail, views, duration
+            SELECT id, title, writer, vocalist, thumbnail, views, duration, uploaded_at, tags
             FROM youtube_videos
             ORDER BY id DESC
         """
@@ -329,11 +334,11 @@ class KalamQueries:
                 return videos
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
-        
-        
+
+
     def get_three_youtube_videos(self):
         query = """
-            SELECT id, title, writer, vocalist, thumbnail, views, duration
+            SELECT id, title, writer, vocalist, thumbnail, views, duration, uploaded_at, tags
             FROM youtube_videos
             ORDER BY id DESC
             LIMIT 3
@@ -345,8 +350,7 @@ class KalamQueries:
                 return videos
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
-
-
+    
 
     def delete_all_youtube_videos(self):
         query = "TRUNCATE TABLE youtube_videos RESTART IDENTITY;"
