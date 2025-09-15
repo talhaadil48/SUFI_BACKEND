@@ -325,7 +325,7 @@ class KalamQueries:
         query = """
             SELECT id, title, writer, vocalist, thumbnail, views, duration, uploaded_at, tags
             FROM youtube_videos
-            ORDER BY id DESC
+            ORDER BY uploaded_at DESC
         """
         try:
             with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -340,7 +340,7 @@ class KalamQueries:
         query = """
             SELECT id, title, writer, vocalist, thumbnail, views, duration, uploaded_at, tags
             FROM youtube_videos
-            ORDER BY id DESC
+            ORDER BY uploaded_at DESC
             LIMIT 3
         """
         try:
@@ -350,7 +350,6 @@ class KalamQueries:
                 return videos
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
-    
 
     def delete_all_youtube_videos(self):
         query = "TRUNCATE TABLE youtube_videos RESTART IDENTITY;"
