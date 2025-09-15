@@ -316,22 +316,37 @@ class KalamQueries:
                 self.conn.commit()
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
-
-    def get_all_youtube_videos(self, skip: int = 0, limit: int = 50):
+    def get_all_youtube_videos(self):
         query = """
             SELECT id, title, writer, vocalist, thumbnail, views, duration
             FROM youtube_videos
             ORDER BY id DESC
-            OFFSET %s
-            LIMIT %s;
         """
         try:
             with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
-                cur.execute(query, (skip, limit))
+                cur.execute(query)
                 videos = cur.fetchall()
                 return videos
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
+        
+        
+    def get_three_youtube_videos(self):
+        query = """
+            SELECT id, title, writer, vocalist, thumbnail, views, duration
+            FROM youtube_videos
+            ORDER BY id DESC
+            LIMIT 3
+        """
+        try:
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(query)
+                videos = cur.fetchall()
+                return videos
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+
 
     def delete_all_youtube_videos(self):
         query = "TRUNCATE TABLE youtube_videos RESTART IDENTITY;"

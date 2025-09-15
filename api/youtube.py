@@ -153,3 +153,14 @@ def get_videos():
 
     rows = db.get_all_youtube_videos()
     return [VideoResponse(**row) for row in rows]
+
+
+
+@router.get("/videos-limited", response_model=List[VideoResponse])
+def get_limited_videos():
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+
+    rows = db.get_three_youtube_videos()
+    return [VideoResponse(**row) for row in rows]
+
