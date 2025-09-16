@@ -89,3 +89,6 @@ def check_writer_registration(user_id: int = Depends(get_current_user)):
     if not writer:
         return {"is_registered": False}
     return {"is_registered": True}
+
+
+

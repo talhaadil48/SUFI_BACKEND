@@ -133,3 +133,30 @@ def get_guest_posts_paginated(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+
+
+
+
+@router.get("/writers", response_model=List[dict])
+def get_writers(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1),
+):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+    return db.fetch_writers(skip, limit)
+
+
+
+
+
+@router.get("/special-recognitions/all", response_model=List[dict])
+def get_all_special_recognitions():
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+    
+    try:
+        return db.fetch_all_special_recognitions()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -243,3 +243,14 @@ CREATE TABLE guest_posts (
     views TEXT,
     duration TEXT
 )
+
+
+
+
+CREATE TABLE special_recognitions (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    subtitle VARCHAR(255),
+    description TEXT,
+    achievement TEXT
+);

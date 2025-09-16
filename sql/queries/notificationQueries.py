@@ -1,5 +1,12 @@
 from typing import List
 from psycopg2.extras import RealDictCursor
+from pydantic import BaseModel
+class SpecialRecognitionCreate(BaseModel):
+    title: str
+    subtitle: str | None = None
+    description: str | None = None
+    achievement: str | None = None
+
 class NotificationQueries:
     def __init__(self, conn):
         self.conn = conn
@@ -156,4 +163,62 @@ class NotificationQueries:
                 return cur.fetchall()
         except Exception as e:
             raise e
+        
+        
+        
+    def create_special_recognition(self, recognition: SpecialRecognitionCreate) -> dict:
+        query = """
+            INSERT INTO special_recognitions (title, subtitle, description, achievement)
+            VALUES (%s, %s, %s, %s)
+            RETURNING *;
+        """
+        try:
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(query, (
+                    recognition.title,
+                    recognition.subtitle,
+                    recognition.description,
+                    recognition.achievement
+                ))
+                self.conn.commit()
+                return cur.fetchone()
+        except Exception as e:
+            self.conn.rollback()
+            raise e
 
+    
+    def fetch_all_special_recognitions(self) -> List[dict]:
+        query = """
+            SELECT *
+            FROM special_recognitions
+            ORDER BY id DESC;
+        """
+        try:
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(query)
+                return cur.fetchall()
+        except Exception as e:
+            raise e
+        
+        
+    def delete_special_recognition(self, recognition_id: int) -> dict:
+        query = """
+            DELETE FROM special_recognitions
+            WHERE id = %s
+            RETURNING *;
+        """
+        try:
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(query, (recognition_id,))
+                result = cur.fetchone()
+                self.conn.commit()
+                if not result:
+                    raise HTTPException(status_code=404, detail="Recognition not found")
+                return result
+        except Exception as e:
+            self.conn.rollback()
+            raise e
+
+
+        
+  

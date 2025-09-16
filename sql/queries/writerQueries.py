@@ -1,5 +1,5 @@
 from psycopg2.extras import RealDictCursor
-
+from typing import List, Optional
 
 
 class WriterQueries:
@@ -86,3 +86,28 @@ class WriterQueries:
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(query, (user_id,))
             return cur.fetchone()
+        
+        
+        
+    def fetch_writers(self, skip: int, limit: int) -> List[dict]:
+        query = """
+            SELECT
+                w.*,
+                u.name AS user_name,
+                u.email AS user_email,
+                u.country AS user_country,
+                u.city AS user_city,
+                u.role AS user_role
+            FROM writers w
+            JOIN users u ON w.user_id = u.id
+            ORDER BY w.created_at DESC
+            OFFSET %s
+            LIMIT %s;
+        """
+        try:
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(query, (skip, limit))
+                writers = cur.fetchall()
+                return writers
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))

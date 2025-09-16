@@ -12,6 +12,12 @@ router = APIRouter(
     tags=["Admin"]
 )
 
+# Pydantic model for creating a special recognition
+class SpecialRecognitionCreate(BaseModel):
+    title: str
+    subtitle: str | None = None
+    description: str | None = None
+    achievement: str | None = None
 
 class KalamResponse(BaseModel):
     title: str
@@ -430,3 +436,48 @@ def get_all_guest_posts(
         return db.fetch_all_guest_posts()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
+
+
+
+
+@router.post("/special-recognitions", response_model=dict)
+def create_special_recognition(
+    recognition: SpecialRecognitionCreate,
+    user_id: str = Depends(get_current_user)
+):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+    
+    user = db.get_user_by_id(user_id)  # Assume this method exists
+    if user["role"] not in ["admin", "sub-admin"]:
+        raise HTTPException(status_code=403, detail="Only admin or sub-admin can create recognitions")
+    
+    try:
+        return db.create_special_recognition(recognition)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    
+@router.delete("/special-recognitions/{recognition_id}", response_model=dict)
+def delete_special_recognition(
+    recognition_id: int,
+    user_id: str = Depends(get_current_user)
+):
+    conn = DBConnection.get_connection()
+    db = Queries(conn)
+    
+    user = db.get_user_by_id(user_id)  # Assume this method exists
+    if user["role"] not in ["admin", "sub-admin"]:
+        raise HTTPException(status_code=403, detail="Only admin or sub-admin can delete recognitions")
+    
+    try:
+        return db.delete_special_recognition(recognition_id)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
