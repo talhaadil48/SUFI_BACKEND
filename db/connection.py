@@ -1,6 +1,7 @@
+import os
 import psycopg2
-from config import DATABASE_CONFIG
 from psycopg2.extras import DictCursor
+
 class DBConnection:
     """
     Manages a single global DB connection using psycopg (PostgreSQL).
@@ -11,14 +12,10 @@ class DBConnection:
     def get_connection(cls):
         if cls._connection is None or cls._connection.closed:
             try:
-                print(DATABASE_CONFIG)
+                database_url = os.getenv("DATABASE_URL")
                 cls._connection = psycopg2.connect(
-                    host=DATABASE_CONFIG["host"],
-                    dbname=DATABASE_CONFIG["database"],
-                    user=DATABASE_CONFIG["user"],
-                    password=DATABASE_CONFIG["password"],
-                    port=DATABASE_CONFIG["port"],
-                    cursor_factory=DictCursor  # Returns rows as dicts like DictCursor
+                    database_url,
+                    cursor_factory=DictCursor
                 )
                 print("Database connected.")
             except psycopg2.Error as e:
